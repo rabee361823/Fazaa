@@ -1,0 +1,100 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="content-header">
+        <nav class="breadcrumb">
+            <a href="{% url 'catalogs' %}">الكتالوجات</a>
+            <i class="separator fas fa-chevron-left"></i>
+            <span>قائمة الكتالوجات</span> 
+        </nav>
+    </div>
+
+    <div class="search-container d-flex justify-content-center">
+        <form method="get" class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" name="q" class="form-control" placeholder="بحث..." value="{{ request.GET.q }}">
+        </form>
+    </div>
+
+    <form id="deleteForm" method="POST" action="{% url 'delete-catalog' %}">
+        {% csrf_token %}
+        <input type="hidden" name="selected_ids" id="selectedIds">
+        
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll" class="select-all-checkbox"></th>
+                            {% for field in field_names %}
+                            <th>{{ field }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for catalog in catalogs %}
+                        <tr>
+                            <td><input type="checkbox" class="row-checkbox" value="{{ catalog.id }}"></td>
+                            <td>{{ catalog.id }}</td>
+                            <td>{{ catalog.organization }}</td>
+                            <td>{{ catalog.catalog_type }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% include 'admin_panel/pagination.html' %}
+
+        <div class="action-button-container">
+            <a href="{% url 'add-catalog' %}" class="btn btn-brown">
+                إضافة
+            </a>
+            <button type="submit" class="btn btn-brown" id="deleteBtn">
+                حذف
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const deleteForm = document.getElementById('deleteForm');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const selectedIdsInput = document.getElementById('selectedIds');
+
+    selectAllCheckbox.addEventListener('change', function() {
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+    });
+
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+        });
+    });
+
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+        
+        if (selectedCheckboxes.length === 0) {
+            alert('الرجاء تحديد عنصر واحد على الأقل للحذف');
+            return;
+        }
+
+        if (confirm('هل أنت متأكد من حذف العناصر المحددة؟')) {
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            selectedIdsInput.value = JSON.stringify(selectedIds);
+            this.submit();
+        }
+    });
+});
+</script>
+{% endblock %}
